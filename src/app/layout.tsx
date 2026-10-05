@@ -13,9 +13,17 @@ const barlow = Barlow_Condensed({
   variable: "--font-barlow",
 });
 
+const description =
+  "Know in one second who can come in, who owes money, and who needs to renew. A simple gym management demo.";
+
 export const metadata: Metadata = {
-  title: "GymFlow",
-  description: "Check-ins, payments and renewals.",
+  title: "GymFlow - Run your gym from one simple screen",
+  description,
+  openGraph: {
+    title: "GymFlow - Run your gym from one simple screen",
+    description,
+    type: "website",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

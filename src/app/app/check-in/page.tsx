@@ -29,6 +29,13 @@ const HEADLINE = {
   expired: "text-red-500",
 };
 
+// One-click demo members: one for each colour.
+const DEMO_CHIPS = [
+  { number: "GF-0001", label: "Active member", dot: "bg-green-500" },
+  { number: "GF-0007", label: "Expiring soon", dot: "bg-yellow-400" },
+  { number: "GF-0016", label: "Expired", dot: "bg-red-500" },
+];
+
 export default function CheckIn() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
@@ -99,6 +106,11 @@ export default function CheckIn() {
     select(members[Math.floor(Math.random() * members.length)]);
   }
 
+  function pickDemo(number: string) {
+    const found = members.find((x) => x.number === number);
+    if (found) select(found);
+  }
+
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Escape") return next();
     if (e.key !== "Enter") return;
@@ -111,6 +123,7 @@ export default function CheckIn() {
   const m = result?.member;
   const status = m ? statusOf(m.expiresOn) : null;
   const left = m ? daysLeft(m.expiresOn) : 0;
+  const firstName = m ? m.name.split(" ")[0] : "";
 
   return (
     <div className="max-w-3xl">
@@ -134,6 +147,22 @@ export default function CheckIn() {
           Simulate scan
         </Button>
       </div>
+
+      {!result && query.trim() === "" && members.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="text-sm text-kumo-subtle">Try:</span>
+          {DEMO_CHIPS.map((c) => (
+            <button
+              key={c.number}
+              onClick={() => pickDemo(c.number)}
+              className="flex items-center gap-2 rounded-full border border-kumo-line bg-kumo-base px-3 py-1.5 text-sm hover:bg-kumo-tint"
+            >
+              <span className={`h-2 w-2 rounded-full ${c.dot}`} />
+              {c.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {matches.length > 0 && (
         <div className="mt-3 overflow-hidden rounded-xl border border-kumo-line bg-kumo-base">
@@ -166,7 +195,9 @@ export default function CheckIn() {
               ? "Membership expired"
               : result.overridden
                 ? "Let in with override"
-                : `Welcome back, ${m.name.split(" ")[0]}!`}
+                : result.last
+                  ? `Welcome back, ${firstName}!`
+                  : `Welcome, ${firstName}!`}
           </p>
           <p className="mt-1 text-kumo-subtle">
             {status === "expired" &&
