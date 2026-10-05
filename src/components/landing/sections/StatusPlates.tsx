@@ -1,5 +1,6 @@
 import { Reveal } from "@/components/landing/Reveal";
 import { DARK, DemoButton } from "@/components/landing/shared";
+import platesImg from "../../../assests/landing/status-plates.png";
 
 const PLATES = [
   {
@@ -22,62 +23,65 @@ const PLATES = [
   },
 ];
 
-// Section 3 (black): green, yellow and red plates.
+// Section 3 (black): the heading and the three statuses on the left, the 3D plates
+// picture on the right. On phones the picture goes above the text.
 export function StatusPlates() {
   return (
     <section id="see" className={`scroll-mt-20 ${DARK}`}>
       <div className="mx-auto max-w-6xl px-6 pb-24 pt-20 sm:pt-24">
-        <Reveal as="h2" className="font-heading text-5xl font-semibold leading-none sm:text-7xl lg:text-8xl">
-          Green. Yellow. Red.
-        </Reveal>
-        <Reveal as="p" delay={100} className="mt-4 max-w-xl text-lg text-kumo-subtle">
-          Every member lands on one of three plates. The word is always beside the colour.
-        </Reveal>
-        <div className="mt-14 grid gap-14 sm:grid-cols-3 sm:gap-8">
-          {PLATES.map((p, i) => (
-            <Reveal key={p.label} delay={i * 120} className="text-center">
-              <div className="relative mx-auto aspect-square w-full max-w-[19rem]">
-                <div
-                  aria-hidden="true"
-                  className="absolute inset-0 rounded-full border-[10px]"
-                  style={{
-                    borderColor: p.color,
-                    background: `radial-gradient(circle at 35% 30%, ${p.color}55, ${p.color}1f 70%)`,
-                  }}
-                />
-                <div
-                  aria-hidden="true"
-                  className="absolute inset-[11%] rounded-full border-2"
-                  style={{ borderColor: `${p.color}66` }}
-                />
-                <div
-                  aria-hidden="true"
-                  className="absolute inset-[22%] rounded-full border"
-                  style={{ borderColor: `${p.color}33` }}
-                />
-                <span
-                  className="font-heading absolute inset-x-0 top-[27%] text-2xl font-semibold sm:text-3xl"
-                  style={{ color: p.color }}
-                >
-                  {p.label}
-                </span>
-                <div
-                  aria-hidden="true"
-                  className="absolute left-1/2 top-1/2 h-[16%] w-[16%] -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-neutral-400 bg-[#121212]"
-                />
-              </div>
-              <h3
-                className="font-heading mt-6 text-3xl font-semibold leading-tight"
-                style={{ color: p.color }}
-              >
-                {p.title}
-              </h3>
-              <p className="mx-auto mt-2 max-w-xs text-kumo-subtle">{p.text}</p>
+        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+          {/* Text: left on desktop */}
+          <div>
+            <Reveal
+              as="h2"
+              className="font-heading text-5xl font-semibold leading-none sm:text-6xl lg:text-7xl"
+            >
+              Green. Yellow. Red.
             </Reveal>
-          ))}
-        </div>
-        <div className="mt-14 text-center">
-          <DemoButton />
+            <Reveal as="p" delay={100} className="mt-4 max-w-xl text-lg text-kumo-subtle">
+              Every member lands on one of three plates. The word is always beside the colour.
+            </Reveal>
+
+            <div className="mt-10 space-y-8">
+              {PLATES.map((p, i) => (
+                <Reveal key={p.label} delay={i * 120}>
+                  <div className="border-l-4 pl-5" style={{ borderColor: p.color }}>
+                    {/* The colour always comes with a word label, never alone. */}
+                    <span
+                      className="inline-block rounded-full px-3 py-1 text-xs font-semibold"
+                      style={{ color: p.color, background: `${p.color}26` }}
+                    >
+                      {p.label}
+                    </span>
+                    <h3
+                      className="font-heading mt-2 text-3xl font-semibold leading-tight"
+                      style={{ color: p.color }}
+                    >
+                      {p.title}
+                    </h3>
+                    <p className="mt-1 max-w-md text-kumo-subtle">{p.text}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+
+            <div className="mt-12">
+              <DemoButton />
+            </div>
+          </div>
+
+          {/* Picture: right on desktop, above the text on phones. Decoration only, so no alt text. */}
+          <Reveal className="order-first mx-auto w-full max-w-md lg:order-last lg:max-w-none">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={platesImg.src}
+              width={platesImg.width}
+              height={platesImg.height}
+              alt=""
+              aria-hidden="true"
+              className="h-auto w-full object-contain"
+            />
+          </Reveal>
         </div>
       </div>
     </section>

@@ -1,4 +1,5 @@
 import { BarbellBand } from "@/components/landing/BarbellBand";
+import { Footer } from "@/components/landing/Footer";
 import { Nav } from "@/components/landing/Nav";
 import { Closing } from "@/components/landing/sections/Closing";
 import { DayAtDesk } from "@/components/landing/sections/DayAtDesk";
@@ -36,9 +37,7 @@ export default function Landing() {
         <Closing />
       </main>
 
-      <footer className="bg-[#121212] py-6 text-center text-sm text-white/60">
-        Demo data stays in your browser.
-      </footer>
+      <Footer />
     </div>
   );
 }

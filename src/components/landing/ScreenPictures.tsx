@@ -5,7 +5,7 @@ function Frame({ children }: { children: React.ReactNode }) {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none w-full select-none rounded-2xl border border-kumo-line bg-[#121212] p-4 sm:p-5"
+      className="pointer-events-none w-full select-none rounded-2xl border border-kumo-line bg-[#121212] p-4 text-[#F5F5F5] sm:p-5"
     >
       {children}
     </div>
