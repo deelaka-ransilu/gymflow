@@ -18,7 +18,7 @@ The app code is written to double as the final product. Everything that exists o
 - Keep explanations short, plain and step by step. Give exact commands for PowerShell. The owner types fast with many typos; read for intent.
 - When walking through terminal commands, give one step, then wait for the output before saying more.
 - Give **full file contents** for any new or replaced file, never partial snippets.
-- When unseen files are needed, give a PowerShell file-collector script (one txt output, run from the GymFlow root) instead of asking for pasted files.
+- When unseen files are needed, give a PowerShell file-collector script (one txt output, run from the GymFlow root) instead of asking for pasted files. Write it by hand for GymFlow; the built-in file-collector skill is hard-wired to the Blanche Bridal repos.
 - Prefer the simplest thing that works. Do not add libraries, services or abstractions "for later".
 - When a screen is finished, tell the owner what to click to test it.
 - For visual work, the owner sends screenshots of `localhost:3000` at a wide window. Ask for one after every visual change.
@@ -28,6 +28,7 @@ The app code is written to double as the final product. Everything that exists o
 - Check Kumo components with `npx @cloudflare/kumo doc <Name>` before using them. Do not guess props.
 - Never hand over a placeholder as if it were finished (an earlier AppPreview used empty grey boxes where the sidebar icons belong). If something is a stand-in, say so.
 - For anything visual that needs a picture, write the image prompt first (see "Landing 3D pictures"), let the owner generate it, then write the code.
+- When the owner does not answer a question, say which default you picked, build that, and keep the rest as a proposal. Do not describe a proposed change as built.
 
 ## Stack
 
@@ -40,6 +41,7 @@ The app code is written to double as the final product. Everything that exists o
 | QR codes | `qrcode` (member cards and the pay page, generated in the browser) |
 | Charts | Hand-drawn HTML and SVG in `components/app/charts/`. No chart library (see "Dashboard") |
 | Landing pictures | Four generated 3D PNGs in `src/assests/landing/` (see "Landing 3D pictures") |
+| Landing text animation | `Reveal` (fade) and `RevealText` (headline lines), both Tailwind classes plus an IntersectionObserver. No animation library |
 | Fonts | Poppins (body), Barlow Condensed (headings), loaded with `next/font/google` |
 | Hosting | GitHub Pages via `.github/workflows/deploy.yml` |
 
@@ -102,10 +104,11 @@ src/
       Footer.tsx            real footer: logo and one-line description, "On this page" links, "Get in touch" (demo and WhatsApp), copyright and demo-data note
       BarbellBand.tsx       barbell bar on the seam between two sections (client component)
       Reveal.tsx            fade-and-slide on scroll. Accepts only children, as, delay and className (NO style prop)
+      RevealText.tsx        headline animation: each line slides up out of its own mask on scroll (client component). Takes lines (array), as, delay, className. See "Headline animation"
       ScreenPictures.tsx    small HTML pictures of check-in, receipt and expiring screens (their frame sets its own light text colour)
       shared.tsx            section colours, buttons, DemoButton, WhatsApp number and link
       sections/             one file per landing section
-        Hero.tsx            black: headline, Try the demo, product window
+        Hero.tsx            black: headline (uses RevealText), Try the demo, product window
         Questions.tsx       off-white: the three front-desk questions, text left, 3D picture right
         StatusPlates.tsx    black: heading and three statuses left, 3D plates picture right (id "see")
         DayAtDesk.tsx       orange: three rows with screen pictures (id "day")
@@ -135,7 +138,7 @@ src/
 1. **Static export only.** `next.config.ts` uses `output: "export"` with `trailingSlash: true`. That means no API routes, no server actions, no middleware, no server-side rendering, no Prisma, and no dynamic route segments like `/members/[id]`.
 2. **Use query strings for IDs.** Member profile is `/app/members/view?id=...` and payment is `/app/members/pay?id=...`. Read the id with `useSearchParams` in a client component wrapped in `<Suspense>`. Member ids are UUIDs (see "Data model"); the readable numbers (`GF-0007`, `R-0001`) are separate.
 3. **`basePath` is `/gymflow` in production only.** Use `next/link` and `useRouter` so it is applied automatically. Never hard-code `/gymflow/` into links. Plain `<a href>` only for `#anchors`, `tel:` and external links. Landing pictures are imported from `src/assests/landing/` and drawn with a plain `<img src={image.src}>`; **check on the live site that they load under `/gymflow`** (open item).
-4. **Browser-only code goes in client components.** Anything touching Dexie, Kumo, `localStorage`, `window` or WebGL needs `"use client"` and must not run at module level. Read data inside hooks such as `useLiveQuery` or `useEffect`. The landing page (`page.tsx`) and the section files stay server components; `Nav`, `BarbellBand`, `Reveal` and `AppPreview` are the client components there.
+4. **Browser-only code goes in client components.** Anything touching Dexie, Kumo, `localStorage`, `window` or WebGL needs `"use client"` and must not run at module level. Read data inside hooks such as `useLiveQuery` or `useEffect`. The landing page (`page.tsx`) and the section files stay server components; `Nav`, `BarbellBand`, `Reveal`, `RevealText` and `AppPreview` are the client components there.
 5. **Keep the data layer swappable.** Screens call functions from `src/db/` and `src/lib/`. Prefer small functions in `src/db/` over new direct `db` queries inside pages (check-in and expiring still query `db` directly for brevity). `src/db/` is the only place that knows where data is stored.
 6. **Business rules live in `src/lib/rules.ts`.** Do not re-implement date, status or renewal logic inside a page. The "expiring" list and count come from `expiringMembers` in `src/db/stats.ts` (which uses `statusOf`); Home and the sidebar badge both use it, so use it for any new place that needs it.
 7. **Dates are plain strings.** Calendar dates are `YYYY-MM-DD`; timestamps are local ISO-like strings `YYYY-MM-DDTHH:mm:ss` from `nowLocal()`. Do not store `Date` objects or UTC timestamps.
@@ -145,6 +148,7 @@ src/
 11. **Keep demo and app apart.** Nothing in `components/app/` may import from `components/demo/`, `db/demo.ts` or `db/seed.ts`. Demo-only behavior goes in `DemoFrame.tsx`, `demo.ts`, `seed.ts` and the seeding effect in `app/app/layout.tsx`.
 12. **Main screens are listed once, in `nav.ts`.** Adding a screen means one line there (set `ownerOnly` for owner-only screens). Every screen starts with `PageHeader`.
 13. **`Reveal` takes no `style` prop.** To set an inline style (for example a coloured left border) put it on a plain `div` inside `Reveal`, not on `Reveal` itself.
+14. **Headline animation goes through `RevealText`, and `Reveal` stays untouched.** Do not add animation props to `Reveal` (the whole landing page uses it). Do not write one-off animation code inside a section file. `RevealText` takes the lines as an array so the line breaks are chosen by hand.
 
 ## Data model (Dexie database `gymflow`, schema version 2)
 
@@ -262,7 +266,7 @@ One centered column (`max-w-3xl`) in this order: a yellow **alert** (only when n
 
 **All landing text, as it stands** (for the planned rewrite; change it in the section files):
 - **Nav:** logo, links See it / Pricing / FAQ, button Try the demo.
-- **Hero:** "Run your gym from one simple screen." / "Know in one second who can come in, who owes money, and who needs to renew." / Try the demo / "No sign-up. 20 sample members. Your data stays in this browser." / link "See how it works" / the Home picture.
+- **Hero:** "Run your gym from one simple screen." (two lines: "Run your gym from" / "one simple screen." in orange) / "Know in one second who can come in, who owes money, and who needs to renew." / Try the demo / "No sign-up. 20 sample members. Your data stays in this browser." / link "See how it works" / the Home picture.
 - **Questions:** label "Every front desk asks the same three things." Then "Is this member expired?" (Green, yellow or red in one second, with the word beside it.), "Who still owes money?" (The balance shows on every member and at check-in.), "Who should I call this week?" (A daily list of expiring members, with Call and Message buttons.)
 - **StatusPlates:** "Green. Yellow. Red." / "Every member lands on one of three plates. The word is always beside the colour." Three rows, each with a word label: Active ("Welcome. Let them in." / The visit is logged automatically. Nothing else to do.), Expiring soon ("Expiring soon. Ask them to renew." / It says how many days are left, so the conversation is easy.), Expired ("Expired. Stop and renew." / You can still let them in if you choose. The override is recorded.). Button Try the demo.
 - **DayAtDesk:** "Your day at the desk." Three steps: Check the member in; Take payment, print the receipt; Call before they expire (each with a screen picture from `ScreenPictures.tsx`).
@@ -273,7 +277,7 @@ One centered column (`max-w-3xl`) in this order: a yellow **alert** (only when n
 - **Footer:** logo, "Simple gym management for small gyms. Check members in, take payments, and never miss a renewal."; "On this page" links (See it, Your day at the desk, Pricing, FAQ); "Get in touch" (Try the demo, Talk to us on WhatsApp); bottom line with the year and "The demo uses sample data. It stays in your browser."
 
 - **Nav** (`Nav.tsx`): a floating pill fixed at the top with the GymFlow logo, links See it (`#see`), Pricing (`#pricing`), FAQ (`#faq`) and an orange **Try the demo** button. After 80px of scroll it shrinks and gets more solid. The text links are hidden on phones; the button always shows. The hero's "See how it works" link goes to `#day`.
-- **Hero:** same headline, one big Try the demo button, the small line, and the product window (`AppPreview`, the whole window links to `/app`).
+- **Hero:** the headline uses `RevealText` (two lines slide up one after the other). The line below it and the button wait longer (`delay` 300 and 400 ms) so they appear after the headline lands. One big Try the demo button, the small line, and the product window (`AppPreview`, the whole window links to `/app`).
 - **AppPreview:** a picture of the real Home screen: Mac title bar, a sidebar with the orange barbell logo tile, the search box with `/`, the same Phosphor icons as `nav.ts` (selected Home with an orange icon tile, the yellow Expiring badge 6), the Backup item, and the Owner card; then the Home header with Check-in and Add member, four stat cards, the Check-ins bars, the Membership status bar, and the Money collected line. Below tablet width the sidebar is hidden. All names and numbers are sample data. It is a client component because it uses the regular Phosphor icon import.
 - **Questions** (`Questions.tsx`): each row is text on the left (the big question and the grey line under it) and a 3D picture on the right. On phones the picture sits above the question. Pictures are decoration (`alt=""`, `aria-hidden`).
 - **StatusPlates** (`StatusPlates.tsx`): heading, intro line and the three status rows (each with a coloured left line and a word label pill) on the left, the stacked-plates picture on the right (above the text on phones), and a Try the demo button. The colour is never alone: each row carries its word.
@@ -293,12 +297,24 @@ One centered column (`max-w-3xl`) in this order: a yellow **alert** (only when n
 - **Sections need extra top padding** (about `pt-20` to `pt-32`) so their first heading does not sit under the bar. Do not put `overflow-hidden` on a section; it would clip the bar where it overlaps.
 - **No plates or collars on the barbell bars.** They were tried (speckled rubber plates, a 3D one-barbell drawing) and removed on purpose; only the bar remains. This rule is about the bars only. The 3D stacked-plates picture in the StatusPlates section is a separate, deliberate image.
 
+## Headline animation (`Reveal` and `RevealText`)
+
+Two small client components, both using an `IntersectionObserver` that fires once. Both keep the text in the page HTML (only hidden by CSS), so screen readers and search engines still read it, and both show the text straight away under "reduce motion". No animation library.
+
+- **`Reveal`:** fade and slide up. Used for body text, cards, buttons, pictures and short headings. Props: `children`, `as`, `delay`, `className`. No `style` prop.
+- **`RevealText`:** the headline animation. Each line slides up out of its own mask (an `overflow-hidden` wrapper) when the heading scrolls into view, one line after the other (120 ms apart). Props: `lines` (an array of strings or elements, one per line, so a line can hold an orange accent `<span>`), `as` (default `h2`, use `h1` for the Hero), `delay` (ms before the first line), `className` (the heading's size and font classes go here). Each wrapper has `pb-[0.12em]` and `-mb-[0.12em]` so letters with tails (g, y, p) are not clipped at a tight line height.
+- **Usage:** `<RevealText as="h1" className="font-heading text-6xl font-semibold leading-none sm:text-8xl" lines={["Run your gym from", <span key="accent" className="text-accent">one simple screen.</span>]} />`. Give each element in `lines` a `key`.
+- **Where it is used (built):** the Hero headline only.
+- **Proposed, not built, not yet approved by the owner:** extra styles through a `variant` prop on `RevealText` (the default stays the line slide-up). The plan was: Questions use a left-to-right wipe; "Green. Yellow. Red." pops in word by word, each word in its status colour; "Your day at the desk" and the Closing headline use the line slide-up; the Owner/Receptionist, Pricing and FAQ headings keep the `Reveal` fade. The coloured words would use the status colours as decoration, like the plates picture, so the owner has to agree to that. Build one section at a time and ask for a screenshot after each.
+- **Banned (still):** word-by-word headline animation across the page, a shine sweep on the button, floating tilted cards, crossed tickers. The line slide-up is the one allowed headline animation. The status-colour word pop above is only a proposal.
+- Motion that exists on the landing page: `Reveal`, `RevealText`, the bar fade-in, the nav shrinking and smooth anchor scrolling (off for reduced motion).
+
 **Rules for the landing page:**
 - Every section leads to **Try the demo**.
 - Only claim what is actually built. No invented proof (no logos, quotes or user counts) until the pilot gym is confirmed; a real owner quote is the future proof element. The footer has no email, address, social icons, or Privacy and Terms links for the same reason; add them only when they exist.
 - Pricing is a single card, "Founding gym offer: Talk to us", with a list of what is built and no price. Do not add price tiers or an Automatic reminders tier until the backend exists.
-- Motion is limited to the gentle fade-and-slide on scroll (`Reveal`), the bar fade-in, the nav shrinking and smooth anchor scrolling (off for reduced motion).
-- **Not BITprep-style layout.** Colour-blocked sections are allowed (the owner asked for them), but do not add floating tilted cards, crossed ticker bands or marquees, word-by-word headline animation, a shine sweep on the button, or a hard offset shadow. These were removed on purpose. (The 3D pictures reuse the BITprep subject-illustration look on purpose; only the layout tricks are banned.)
+- Motion is limited to what "Headline animation" lists. Do not add more without the owner asking.
+- **Not BITprep-style layout.** Colour-blocked sections are allowed (the owner asked for them), but do not add floating tilted cards, crossed ticker bands or marquees, word-by-word headline animation across the whole page, a shine sweep on the button, or a hard offset shadow. These were removed on purpose. (The 3D pictures reuse the BITprep subject-illustration look on purpose; only the layout tricks are banned.) `RevealText` is line-based and is the owner's later, deliberate exception for headlines.
 - `WHATSAPP_NUMBER` in `landing/shared.tsx` is still the placeholder `94XXXXXXXXX`. Replace it (country code, no `+` or spaces) before sharing the site. This is the only place it lives; the Pricing and Closing buttons and the footer all use it.
 - Names, dates and amounts in `AppPreview` and `ScreenPictures` are sample data, not read from the database.
 - Do not put text in a color that has poor contrast on the block it sits on. On off-white use black or near-black text and `#B34700` / `#C2410C` for orange accents; on orange use black text. A dark picture card placed on an orange or off-white block must set its own text colour.
@@ -404,23 +420,26 @@ The landing page redesign: floating pill nav, colour-blocked sections (black, of
 
 **Pushed and confirmed:** commit `2a50041` (dashboard charts, backup history, PageHeader, CLAUDE.md update). The live site worked after it.
 
-**Delivered and tested on localhost, not yet confirmed as pushed:** Members Import and Export buttons; the new `AppPreview`; the Questions pictures and layout; the StatusPlates layout and picture (including the fix for `Reveal` not taking `style`); the `ScreenPictures` contrast fix; the new `Footer` and `page.tsx`; this `CLAUDE.md`. Run `git status` and push with the chained command.
+**Delivered and tested on localhost, not yet confirmed as pushed:** Members Import and Export buttons; the new `AppPreview`; the Questions pictures and layout; the StatusPlates layout and picture (including the fix for `Reveal` not taking `style`); the `ScreenPictures` contrast fix; the new `Footer` and `page.tsx`; the previous `CLAUDE.md`. Run `git status` and push with the chained command.
+
+**Delivered, not yet tested or pushed:** `RevealText.tsx` and the Hero headline using it (with the Hero's line and button delays moved to 300 and 400 ms), and this `CLAUDE.md`. The owner has not yet sent a screenshot. Check that the two lines rise one after the other, "one simple screen." is orange, and the bottoms of g and y are not clipped; also check at phone width.
 
 **Manual tests still unconfirmed** (click Reset demo data first): Renew on GF-0016 followed by a part-payment; Cancel payment as Owner and its absence as Receptionist; a second check-in blocked in one day; Simulate scan; Backup export, import, a bad file and the receptionist lock; Record payment then Print receipt (the sidebar must not appear on the receipt); the Check-in "Welcome" wording; the Message button on the Expiring page; the Try chips on Check-in (none should say "already checked in"); a payment of LKR 1,000 on GF-0008.
 
 **Open items, in the agreed order:**
 1. Push what is pending (see above). Then check the live GitHub Pages site: landing page, the four 3D pictures (they must load under the `/gymflow` base path), the footer links, **Try the demo** to the sign-in screen, the animated background on `/gymflow/app/`, **Back to website** and **Get this for your gym**, then press Reset demo data.
-2. Landing text rewrite: the owner wants to rewrite the text and flow of each section. Decide first who the page speaks to (gym owners) and the tone, then write the new text and edit the section files one at a time.
-3. DayAtDesk decision: A) keep the screen pictures (contrast fix only), B) add a small 3D icon per step and keep the screens (needs three more image prompts), C) replace the screens with 3D pictures. Recommended: A or B.
-4. Toasts for saved payment and renewal (read the `useKumoToastManager` typings first) and a Kumo confirm dialog for Cancel payment (replace `window.confirm`).
-5. Members Import and Export to Excel: agree what Export contains, how Import treats existing members, and add SheetJS.
-6. Payments screen, owner only: list, date filter, totals split by cash and bank, CSV export. Add it to `nav.ts`.
-7. Settings screen, owner only: plan prices, admission fee, expiring days (already read from the database).
-8. Responsive pass: Members table as cards on tablet and phone, a phone and tablet check of the whole demo and the landing page (nav, barbell bars, section padding, orange section contrast, the new Questions and StatusPlates rows), a shared loading skeleton and empty states, and `PageHeader` on every screen that does not use it yet.
-9. Small items: autofocus the Check-in input so a scanner works without a click; add a focus trap to the mobile drawer before any real launch.
-10. Replace the WhatsApp placeholder number in `landing/shared.tsx`.
-11. Show the demo to a real gym owner. Their answers decide the business rules, pricing and whether a backend is needed.
-12. Optional: an Open Graph share image (needs a PNG in `public/` and an absolute URL).
+2. Headline animation: test the Hero, then agree the proposed styles for the other sections (see "Headline animation") and build them one at a time with a `variant` prop on `RevealText`.
+3. Landing text rewrite: the owner wants to rewrite the text and flow of each section. Decide first who the page speaks to (gym owners) and the tone, then write the new text and edit the section files one at a time. Headings that use `RevealText` need their `lines` rewritten, not just a string.
+4. DayAtDesk decision: A) keep the screen pictures (contrast fix only), B) add a small 3D icon per step and keep the screens (needs three more image prompts), C) replace the screens with 3D pictures. Recommended: A or B.
+5. Toasts for saved payment and renewal (read the `useKumoToastManager` typings first) and a Kumo confirm dialog for Cancel payment (replace `window.confirm`).
+6. Members Import and Export to Excel: agree what Export contains, how Import treats existing members, and add SheetJS.
+7. Payments screen, owner only: list, date filter, totals split by cash and bank, CSV export. Add it to `nav.ts`.
+8. Settings screen, owner only: plan prices, admission fee, expiring days (already read from the database).
+9. Responsive pass: Members table as cards on tablet and phone, a phone and tablet check of the whole demo and the landing page (nav, barbell bars, section padding, orange section contrast, the new Questions and StatusPlates rows, the headline animation), a shared loading skeleton and empty states, and `PageHeader` on every screen that does not use it yet.
+10. Small items: autofocus the Check-in input so a scanner works without a click; add a focus trap to the mobile drawer before any real launch; check VS Code's 1 problem in `src/app/app/members/page.tsx` (its message was never read).
+11. Replace the WhatsApp placeholder number in `landing/shared.tsx`.
+12. Show the demo to a real gym owner. Their answers decide the business rules, pricing and whether a backend is needed.
+13. Optional: an Open Graph share image (needs a PNG in `public/` and an absolute URL).
 
 ## Not in scope (do not build unless asked)
 
@@ -432,6 +451,7 @@ POS or shop, CRM or leads, classes and booking, workout plans, body progress, tr
 - GitHub Pages serves the site under `/gymflow/`. If CSS, JS or the landing pictures fail to load after a deploy, check `basePath` first.
 - The pictures folder is `src/assests/landing/` (note the spelling). Imports must match it exactly.
 - `Reveal` does not accept a `style` prop (TypeScript error "Property 'style' does not exist"). Put the style on an inner `div`.
+- `RevealText` needs a `key` on every element inside `lines` (React warning otherwise). Its line wrappers use `overflow-hidden`, so keep the `pb-[0.12em]` and `-mb-[0.12em]` padding trick or letters with tails get cut off at `leading-none`.
 - A dark picture card placed in the orange or off-white sections inherits that section's text colour (black). Set the card's own text colour, or its text will be nearly invisible (this happened in `ScreenPictures.tsx`).
 - Dexie and WebGL cannot run during the build. A crash like "indexedDB is not defined" means a call is running at module level or during server rendering; move it into a hook inside a `"use client"` component.
 - A barbell bar that looks cut by a straight line means the `from` and `to` colours do not match the real section colours; check `BLOCK` in `BarbellBand.tsx` against `shared.tsx`.
