@@ -61,7 +61,7 @@ const DAY = [
   },
   {
     title: "Call before they expire",
-    text: "Each morning, see who expires today, in the next three days and later in the week. Tap Call, and Renew when they come in.",
+    text: "Each morning, see who expires today, in the next three days and later in the week. Tap Call, or send a WhatsApp reminder. Renew them when they come in.",
     picture: <ExpiringPicture />,
   },
 ];
@@ -75,6 +75,15 @@ const ROLES = [
     title: "Receptionist",
     text: "Check-in, members and payments. No revenue figures and no backup page.",
   },
+];
+
+const INCLUDED = [
+  "Check-in with the green, yellow and red result",
+  "Member list and printed QR cards",
+  "Payments, part-payments and printed receipts",
+  "Daily expiring list with Call and WhatsApp message buttons",
+  "Owner and receptionist sign-ins",
+  "Backup and restore",
 ];
 
 const FAQ = [
@@ -259,11 +268,19 @@ export default function Landing() {
               We are looking for our first gyms. Tell us how your front desk works today, and we
               will agree a fair price together.
             </p>
+            <ul className="mt-6 grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
+              {INCLUDED.map((item) => (
+                <li key={item} className="flex gap-3">
+                  <span aria-hidden="true" className="text-accent">+</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
             <a
               href={WHATSAPP_LINK}
               target="_blank"
               rel="noopener noreferrer"
-              className={`${PRIMARY_BTN} mt-6 px-6 py-3`}
+              className={`${PRIMARY_BTN} mt-8 px-6 py-3`}
             >
               Talk to us on WhatsApp
             </a>

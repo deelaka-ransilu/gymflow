@@ -109,6 +109,7 @@ export function ExpiringPicture() {
               <span className="text-neutral-300">{r.when}</span>
               {r.owes && <span className="text-yellow-400">{r.owes}</span>}
               <span className="rounded-md bg-kumo-tint px-2.5 py-1 font-medium">Call</span>
+              <span className="rounded-md bg-kumo-tint px-2.5 py-1 font-medium">Message</span>
               <span className="rounded-md bg-[#FF6A00] px-2.5 py-1 font-medium text-black">Renew</span>
             </div>
           </div>

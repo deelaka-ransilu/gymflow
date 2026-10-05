@@ -8,6 +8,23 @@ import type { Member } from "@/db/types";
 import { daysLeft, formatLKR } from "@/lib/rules";
 import { formatDate, initials } from "@/lib/format";
 
+// Turns a Sri Lankan number like 077 123 4567 into 94771234567 for wa.me links.
+function whatsappNumber(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("94")) return digits;
+  if (digits.startsWith("0")) return `94${digits.slice(1)}`;
+  return `94${digits}`;
+}
+
+function reminderLink(m: Member): string {
+  const left = daysLeft(m.expiresOn);
+  const firstName = m.name.split(" ")[0];
+  const when =
+    left === 0 ? "expires today" : `expires on ${formatDate(m.expiresOn)}`;
+  const text = `Hi ${firstName}, your gym membership ${when}. Please come by the front desk to renew. Thank you!`;
+  return `https://wa.me/${whatsappNumber(m.phone)}?text=${encodeURIComponent(text)}`;
+}
+
 function Row({ m }: { m: Member }) {
   const left = daysLeft(m.expiresOn);
   return (
@@ -36,6 +53,11 @@ function Row({ m }: { m: Member }) {
         <a href={`tel:${m.phone}`}>
           <Button variant="secondary" size="sm">
             Call
+          </Button>
+        </a>
+        <a href={reminderLink(m)} target="_blank" rel="noopener noreferrer">
+          <Button variant="secondary" size="sm">
+            Message
           </Button>
         </a>
         <Link href={`/app/members/view?id=${encodeURIComponent(m.id)}`}>
@@ -91,7 +113,7 @@ export default function ExpiringPage() {
       <h1 className="font-heading text-4xl">Expiring</h1>
       <p className="text-neutral-400">
         {soon.length} {soon.length === 1 ? "member expires" : "members expire"} in the next {days} days.
-        Call them from this list.
+        Call or message them from this list.
       </p>
 
       <Group title="Today" members={today0} />
