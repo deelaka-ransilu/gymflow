@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Button } from "@cloudflare/kumo";
 import { db } from "@/db/db";
@@ -22,6 +22,7 @@ function Detail({ label, value }: { label: string; value?: string }) {
 }
 
 function ViewInner() {
+  const router = useRouter();
   const params = useSearchParams();
   const id = params.get("id");
   const { role } = useRole();
@@ -70,7 +71,7 @@ function ViewInner() {
     setError("");
     try {
       await renewMember(member.id, renewPlan || member.planId, role === "owner" && waive);
-      window.location.href = `/gymflow/app/members/pay/?id=${encodeURIComponent(member.id)}`;
+      router.push(`/app/members/pay?id=${encodeURIComponent(member.id)}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
     }
