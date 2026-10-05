@@ -19,6 +19,7 @@ This repo is currently a **static demo** hosted on GitHub Pages. All data lives 
 - When unseen files are needed, give a PowerShell file-collector script (one txt output, run from the GymFlow root) instead of asking for pasted files.
 - Prefer the simplest thing that works. Do not add libraries, services or abstractions "for later".
 - When a screen is finished, tell the owner what to click to test it.
+- For visual work (landing page), the owner sends screenshots of `localhost:3000` at a wide window. Ask for one after every visual change.
 - Chain build and push so a failed build stops the push:
   `npm run build && git add . && git commit -m "message" && git push`
 - Pushing to `main` deploys automatically through GitHub Actions. Never push a failing build.
@@ -53,7 +54,7 @@ src/
   app/
     layout.tsx              fonts, metadata, <html data-mode="dark">
     globals.css             Tailwind, Kumo styles, theme overrides, smooth scroll, print rules
-    page.tsx                landing page (server component, see "Landing page")
+    page.tsx                landing page: only lists the sections and barbell seams (server component)
     app/                    the demo, lives at /app
       layout.tsx            demo shell: sign-in gate, Mac window frame, menu, buttons under the window, seeds data
       page.tsx              Home dashboard
@@ -66,12 +67,24 @@ src/
       backup/page.tsx       Backup (owner only)
   components/
     AnimatedBackground.tsx  WebGL orange halftone background for the demo
-    AppPreview.tsx          fake Home dashboard in a Mac window, used on the landing page
+    AppPreview.tsx          fake Home dashboard in a Mac window, used in the landing hero
     Login.tsx               "Sign in to the demo" screen (Owner / Receptionist)
     StatusBadge.tsx         Active / Expiring soon / Expired pill
     landing/
-      Reveal.tsx            fade-and-slide on scroll, the only landing motion
+      Nav.tsx               floating pill nav (client component)
+      BarbellBand.tsx       barbell bar on the seam between two sections (client component)
+      Reveal.tsx            fade-and-slide on scroll
       ScreenPictures.tsx    small HTML pictures of check-in, receipt and expiring screens
+      shared.tsx            section colours, buttons, DemoButton, WhatsApp number and link
+      sections/             one file per landing section
+        Hero.tsx            black: headline, Try the demo, product window
+        Questions.tsx       off-white: the three front-desk questions
+        StatusPlates.tsx    black: green, yellow and red plates (id "see")
+        DayAtDesk.tsx       orange: three rows with screen pictures (id "day")
+        DemoRoles.tsx       off-white: Owner and Receptionist sign-ins (id "demo")
+        Pricing.tsx         black: Founding gym offer card (id "pricing")
+        Faq.tsx             off-white: questions in <details> (id "faq")
+        Closing.tsx         orange: final Try the demo and WhatsApp (id "contact")
   db/
     types.ts                Role, Plan, Member, Payment, Visit, Setting
     db.ts                   Dexie database "gymflow" and its tables
@@ -91,7 +104,7 @@ src/
 1. **Static export only.** `next.config.ts` uses `output: "export"` with `trailingSlash: true`. That means no API routes, no server actions, no middleware, no server-side rendering, no Prisma, and no dynamic route segments like `/members/[id]`.
 2. **Use query strings for IDs.** Member profile is `/app/members/view?id=...` and payment is `/app/members/pay?id=...`. Read the id with `useSearchParams` in a client component wrapped in `<Suspense>`.
 3. **`basePath` is `/gymflow` in production only.** Use `next/link` and `useRouter` so it is applied automatically. Never hard-code `/gymflow/` into links. Plain `<a href>` only for `#anchors`, `tel:` and external links.
-4. **Browser-only code goes in client components.** Anything touching Dexie, Kumo, `localStorage`, `window` or WebGL needs `"use client"` and must not run at module level. Read data inside hooks such as `useLiveQuery` or `useEffect`. The landing page (`page.tsx`) stays a server component; only `Reveal` is a client component there.
+4. **Browser-only code goes in client components.** Anything touching Dexie, Kumo, `localStorage`, `window` or WebGL needs `"use client"` and must not run at module level. Read data inside hooks such as `useLiveQuery` or `useEffect`. The landing page (`page.tsx`) and the section files stay server components; only `Nav`, `BarbellBand` and `Reveal` are client components there.
 5. **Keep the data layer swappable.** Screens call functions from `src/db/` and `src/lib/`. Prefer small functions in `src/db/` over new direct `db` queries inside pages (check-in and expiring still query `db` directly for brevity).
 6. **Business rules live in `src/lib/rules.ts`.** Do not re-implement date, status or renewal logic inside a page.
 7. **Dates are plain strings.** Calendar dates are `YYYY-MM-DD`; timestamps are local ISO-like strings `YYYY-MM-DDTHH:mm:ss` from `nowLocal()`. Do not store `Date` objects or UTC timestamps.
@@ -164,30 +177,60 @@ Check `db.ts` for the current schema version before changing anything.
 
 - **Sign-in:** opening `/app` first shows "Sign in to the demo" (`Login.tsx`) with **Continue as Owner** and **Continue as Receptionist**. No password; this is a convenience, not security. `src/lib/role.tsx` exposes `role`, `signedIn` (null while checking, then true or false), `signIn(role)` and `signOut()`, stored in `localStorage` keys `gf-role` and `gf-signed-in`. The top bar shows "Signed in as X" and a Sign out button.
 - **Window frame:** on `lg` screens and up the whole demo sits in a Mac-style window (traffic lights, address bar, fixed height, content scrolls inside). Below `lg` it is full width with no frame. Printing hides the frame. The GymFlow logo in the demo links to `/app`.
-- **Buttons under the window:** **Back to website** (`/`) and **Get this for your gym** (`/#contact`). All of this is in `src/app/app/layout.tsx`.
+- **Buttons under the window:** **Back to website** (`/`) and **Get this for your gym** (`/#contact`, which is the Closing section on the landing page). All of this is in `src/app/app/layout.tsx`.
 - **Background:** `AnimatedBackground.tsx` draws an orange halftone flow with a WebGL canvas (no iframe). It is capped near 30 fps, pauses when the tab is hidden, draws one still frame if "reduce motion" is on, and is hidden when printing. **Do not call `loseContext()` in the cleanup:** it broke the canvas in React dev strict mode. Do not go back to CSS blobs; they lagged.
 - **Seeding:** the demo shell calls `ensureSeeded()` on load; the first visit fills the browser with 20 fake members covering every status (two expired, several expiring, one with a LKR 1,000 balance). **Reset demo data** on the Backup page calls `resetDemo()`.
 - There is no scanner hardware. **Simulate scan** picks a random member and shows the same result as a real scan. On real hardware a USB scanner types the member number into the same search box and presses Enter.
 
-## Landing page (`src/app/page.tsx`)
+## Landing page (`src/app/page.tsx` and `src/components/landing/`)
 
-Calm, SaaS-style (Apple, Stripe, Linear inspiration): one idea per section, product shown large, one repeated action. Dark only.
+`page.tsx` only lists the sections in order, with a barbell bar on every seam between two colour blocks. Each section's content lives in its own file in `landing/sections/`. To change a section, open its file. To reorder, move the section and its seam together.
 
-**Section order:** sticky nav (How it works, Pricing, FAQ, Contact, orange **Try the demo**), hero ("Run your gym from one simple screen.", one big Try the demo button, "No sign-up. 20 sample members. Your data stays in this browser."), the product window (`AppPreview`, the whole window links to `/app`), "Every front desk asks the same three things", "Green. Yellow. Red." (three tall static colour panels, then a Try the demo button), "Your day at the desk" (three rows, each with a small picture from `ScreenPictures`), "Try it as the owner or the receptionist" (explains the two sign-ins, then a Try the demo button), Pricing, FAQ (native `<details>`), and the closing "Try it with 20 sample members" with Try the demo and WhatsApp.
+**Order, top to bottom** (colour of each block, then the bar on the seam below it):
+
+| # | Section file | Colour | Bar on the seam below (`from` to `to`, `variant`) |
+|---|---|---|---|
+| 1 | `Hero` (headline, Try the demo, product window) | black | dark to light, `wave` |
+| 2 | `Questions` ("Every front desk asks the same three things") | off-white | light to dark, `gentle` |
+| 3 | `StatusPlates` ("Green. Yellow. Red.", id `see`) | black | dark to orange, `deep` |
+| 4 | `DayAtDesk` ("Your day at the desk", id `day`) | orange | orange to light, `straight` |
+| 5 | `DemoRoles` ("Try it as the owner or the receptionist", id `demo`) | off-white | light to dark, `narrow` |
+| 6 | `Pricing` (Founding gym offer, id `pricing`) | black | dark to light, `hump` |
+| 7 | `Faq` (id `faq`) | off-white | light to orange, `wave` |
+| 8 | `Closing` ("Try it with 20 sample members", id `contact`) | orange | none, then the footer |
+
+- **Nav** (`Nav.tsx`): a floating pill fixed at the top with the GymFlow logo, links See it (`#see`), Pricing (`#pricing`), FAQ (`#faq`) and an orange **Try the demo** button. After 80px of scroll it shrinks and gets more solid. The text links are hidden on phones; the button always shows. The hero's "See how it works" link goes to `#day`.
+- **Hero:** same headline ("Run your gym from one simple screen."), one big Try the demo button, the line "No sign-up. 20 sample members. Your data stays in this browser.", and the product window (`AppPreview`, the whole window links to `/app`).
+- **StatusPlates:** three round static competition-plate drawings in green, yellow and red, each with its status word. These are the status plates, separate from the barbell bars.
+- **Where Try the demo appears:** nav, hero, after the status plates, in the DemoRoles section, and at the end (Closing, with WhatsApp as the second option).
+
+**Section colours** (`shared.tsx`): `DARK` (`#121212`, white text), `LIGHT` (`#F5F3EE`, `#121212` text) and `ORANGE` (`#FF6A00`, black text). These are brand colour blocks (black, off-white, accent), not a theme toggle. Buttons: orange with black text on black and off-white sections (`PRIMARY_BTN`), black with white text on orange sections (`BLACK_BTN`), outlined black for the WhatsApp button on orange (`OUTLINE_BLACK_BTN`). `DemoButton` takes `tone="orange" | "black"`.
+
+**Barbell bars** (`BarbellBand.tsx`):
+- It sits on the seam between two sections. The wrapper has zero height (`h-0`, `z-10`), so it takes no space and overlaps both sections. It paints the area above the bar in the `from` colour and the area below in the `to` colour, so the colour change follows the bar. There is no straight edge cutting through the waves.
+- Props: `from` and `to` (`"dark" | "light" | "orange"`, the colour of the section above and below) and `variant`.
+- **Bar colour is automatic** from the pair: black and off-white gives an orange bar, black and orange gives a cream bar, orange and off-white gives a dark bar.
+- **Variants:** `wave` (long rippled bar), `gentle` (classic EZ curl, two dips and a crest), `narrow` (short tight W), `deep` (deep steep W), `hump` (flat with one centred bump) and `straight` (normal barbell). The curved ones are based on real EZ-curl bars. Change a seam by changing the word in `variant="..."`.
+- **Every shape must be symmetrical** (a mirror image around x = 500 in the 1000 x 100 box), start and end flat at y = 50, and use smooth curves with no sharp corners. To add a shape, add one line to `BARS` following the pattern in the comment above it.
+- The SVG is stretched to the full width (`preserveAspectRatio="none"`) and the stroke is `non-scaling`, so the bar stays the same thickness at every width. Only the bar fades in on scroll; the colour split is always there.
+- `BLOCK` in `BarbellBand.tsx` holds the three section colours. **If a section colour changes, change it in both `shared.tsx` and `BLOCK`.**
+- **Sections need extra top padding** (about `pt-20` to `pt-32`) so their first heading does not sit under the bar. Do not put `overflow-hidden` on a section; it would clip the bar where it overlaps.
+- **No plates.** Plates and collars were tried (speckled rubber plates, a 3D one-barbell drawing) and removed on purpose. Only the bar remains.
 
 **Rules for the landing page:**
 - Every section leads to **Try the demo**.
 - Only claim what is actually built. No invented proof (no logos, quotes or user counts) until the pilot gym is confirmed; a real owner quote is the future proof element.
 - Pricing is a single card, "Founding gym offer: Talk to us", with a list of what is built and no price. Do not add price tiers or an Automatic reminders tier until the backend exists.
-- Motion is limited to the gentle fade-and-slide on scroll (`Reveal`) and smooth anchor scrolling (off for reduced motion).
-- **Not BITprep-style.** Do not add floating tilted cards, crossed ticker bands or marquees, word-by-word headline animation, a shine sweep on the button, or a hard offset shadow. These were removed on purpose.
+- Motion is limited to the gentle fade-and-slide on scroll (`Reveal`), the bar fade-in, the nav shrinking and smooth anchor scrolling (off for reduced motion).
+- **Not BITprep-style.** Colour-blocked sections are allowed (the owner asked for them), but do not add floating tilted cards, crossed ticker bands or marquees, word-by-word headline animation, a shine sweep on the button, or a hard offset shadow. These were removed on purpose.
 - The preview in `AppPreview` is drawn in HTML and CSS, not a live iframe or screenshot. It uses a soft orange glow and a thin orange border.
-- `WHATSAPP_NUMBER` at the top of `page.tsx` is still the placeholder `94XXXXXXXXX`. Replace it (country code, no `+` or spaces) before sharing the site.
+- `WHATSAPP_NUMBER` in `landing/shared.tsx` is still the placeholder `94XXXXXXXXX`. Replace it (country code, no `+` or spaces) before sharing the site. This is the only place it lives.
 - Names, dates and amounts in `AppPreview` and `ScreenPictures` are sample data, not read from the database.
+- Do not put text in a color that has poor contrast on the block it sits on. On off-white use black or near-black text and `#B34700` / `#C2410C` for orange accents; on orange use black text.
 
 ## Design system
 
-Dark only. Never add a light mode.
+The demo app (`/app`) is dark only. Never add a light mode or a theme toggle. The landing page uses full-width colour blocks in black, off-white and orange (see above); those are brand colours, not a second theme.
 
 | Use | Color |
 |---|---|
@@ -198,12 +241,13 @@ Dark only. Never add a light mode.
 | Text | `#F5F5F5` |
 | Secondary text | `#A3A3A3` |
 | Accent (actions, selected menu) | `#FF6A00`, hover `#FF8533`, black text on orange buttons |
+| Landing off-white block | `#F5F3EE` |
 | Active status | green `#22C55E` text on a faint green tint |
 | Expiring status | yellow `#FACC15` text on a faint yellow tint |
 | Expired status | red `#EF4444` text on a faint red tint |
 
 Rules:
-- Orange is only for actions, the selected menu item and the accent word in headlines.
+- Orange is only for actions, the selected menu item, the accent word in headlines and (on the landing page) the orange colour blocks and barbell bars.
 - Green, yellow and red mean member status only, and always appear with a word ("Active", "Expiring soon", "Expired"), never color alone.
 - Headings use Barlow Condensed via the `font-heading` class (weight 600). Everything else is Poppins, including names, dates, phone numbers and prices.
 - Cards are 12px rounded with soft borders, no heavy shadows. Buttons are at least 44px tall for tablet use.
@@ -213,7 +257,7 @@ Rules:
 ## Kumo notes
 
 - Theme is switched on by `data-mode="dark"` on `<html>` (set in `layout.tsx`). Colors are overridden in `globals.css` under `html[data-mode="dark"]` using Kumo tokens (`--color-kumo-brand`, `--color-kumo-base`, `--color-kumo-line`, `--text-color-kumo-default`, and so on).
-- Tailwind classes backed by Kumo tokens: `bg-kumo-base`, `bg-kumo-tint`, `border-kumo-line`, `text-kumo-subtle`, `text-kumo-default`. The accent utility is `text-accent` (defined in `globals.css`).
+- Tailwind classes backed by Kumo tokens: `bg-kumo-base`, `bg-kumo-tint`, `border-kumo-line`, `text-kumo-subtle`, `text-kumo-default`. The accent utility is `text-accent` (defined in `globals.css`). Note that `text-kumo-subtle` is a light grey made for dark backgrounds; on off-white or orange sections use `text-black/60` or `text-black/75` instead.
 - Button variants: `primary`, `secondary`, `ghost`, `outline`, `destructive`. Sizes: `xs`, `sm`, `base`, `lg`.
 - Table: `Table`, `Table.Header`, `Table.Head`, `Table.Row`, `Table.Body`, `Table.Cell`, usually inside `<LayerCard className="p-0">`.
 - Input accepts `label`, `description`, `error`, `size`. Field wraps other controls with `label`, `description`, `error`.
@@ -223,25 +267,30 @@ Rules:
 
 ## Status
 
-All roadmap screens are built and deployed: Check-in, Members list, Add member, Payment with receipt and QR card, Member profile with Renew and cancel payment, Expiring (with Call, Message and Renew), Home dashboard, Backup, demo sign-in, Mac window frame, animated background, and the redesigned landing page.
+All roadmap screens are built and deployed: Check-in, Members list, Add member, Payment with receipt and QR card, Member profile with Renew and cancel payment, Expiring (with Call, Message and Renew), Home dashboard, Backup, demo sign-in, Mac window frame, animated background.
+
+The landing page redesign is finished: floating pill nav, colour-blocked sections (black, off-white, orange), one file per section, barbell bars on every seam (six shapes, all symmetrical), pricing card, FAQ and closing section. The older barbell experiments (`BarbellFrame.tsx`, `BarbellHero.tsx`, plates and collars) were deleted.
 
 **Manual tests still unconfirmed** (click Reset demo data first): Renew on GF-0016 followed by a part-payment; Cancel payment as Owner and its absence as Receptionist; a second check-in blocked in one day; Simulate scan; Backup export, import, a bad file and the receptionist lock; Record payment then Print receipt; the Check-in "Welcome" wording; the Message button on the Expiring page.
 
 **Open items:**
-- Replace the WhatsApp placeholder number.
-- Polish: toasts for saved payment and renewal (run `npx @cloudflare/kumo doc Toasty` first), empty states, phone and tablet check of the demo.
+- Check the live GitHub Pages site once after each deploy: landing page, **Try the demo** to the sign-in screen, the animated background on `/gymflow/app/`, **Back to website** and **Get this for your gym** under the `/gymflow` base path.
+- Check the landing page at phone and tablet widths (nav, barbell bars, section padding, orange section contrast).
+- Replace the WhatsApp placeholder number in `landing/shared.tsx`.
+- Polish for the demo: toasts for saved payment and renewal (run `npx @cloudflare/kumo doc Toasty` first), empty states, phone and tablet check of the demo.
 - Show the demo to a real gym owner. Their answers decide the business rules, pricing and whether a backend is needed.
 - Optional: an Open Graph share image (needs a PNG in `public/` and an absolute URL).
 
 ## Not in scope (do not build unless asked)
 
-POS or shop, CRM or leads, classes and booking, workout plans, body progress, trainers module, member portal, freezing, multi-location, multi-company, Sinhala or Tamil, automatic WhatsApp or SMS (needs a backend), online payments, licensing and a control cloud, an update system, dark/light toggle, PDF or Excel exports beyond basic JSON and CSV, and any real authentication.
+POS or shop, CRM or leads, classes and booking, workout plans, body progress, trainers module, member portal, freezing, multi-location, multi-company, Sinhala or Tamil, automatic WhatsApp or SMS (needs a backend), online payments, licensing and a control cloud, an update system, a dark/light toggle, PDF or Excel exports beyond basic JSON and CSV, and any real authentication.
 
 ## Gotchas
 
 - Running several commands on separate PowerShell lines does not stop when one fails. Use `&&` to chain them (PowerShell 7). In older PowerShell use `;`.
 - GitHub Pages serves the site under `/gymflow/`. If CSS or JS fails to load after a deploy, check `basePath` first.
 - Dexie and WebGL cannot run during the build. A crash like "indexedDB is not defined" means a call is running at module level or during server rendering; move it into a hook inside a `"use client"` component.
+- A barbell bar that looks cut by a straight line means the `from` and `to` colours do not match the real section colours; check `BLOCK` in `BarbellBand.tsx` against `shared.tsx`.
 - `npm audit --omit=dev` found 0 vulnerabilities (checked 2026-10-05); the 5 high-severity warnings from plain `npm audit` are dev-tool only. Never run `npm audit fix --force`; it can break the project. Re-run `npm audit --omit=dev` before any real launch.
 - The VS Code warning "Value 'github-pages' is not valid" in `deploy.yml` is a false positive and can be ignored. Git's "LF will be replaced by CRLF" warnings are harmless on Windows.
 - The repo is public. Never commit real member data, Excel files or secrets. The `out/` folder is build output; do not edit it.
