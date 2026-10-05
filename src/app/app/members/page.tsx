@@ -4,9 +4,11 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLiveQuery } from "dexie-react-hooks";
+import { DownloadSimple, UploadSimple } from "@phosphor-icons/react";
 import { Button, Input, LayerCard, Table } from "@cloudflare/kumo";
 import { db } from "@/db/db";
 import { StatusBadge } from "@/components/StatusBadge";
+import { PageHeader } from "@/components/app/PageHeader";
 import { statusOf, formatLKR } from "@/lib/rules";
 import { formatDate, initials } from "@/lib/format";
 
@@ -43,17 +45,24 @@ export default function MembersPage() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-heading text-4xl">Members</h1>
-          <p className="text-neutral-400">
-            {members ? `${members.length} members` : "Loading..."}
-          </p>
-        </div>
-        <Button variant="primary" onClick={() => router.push("/app/members/new")}>
-          Add member
-        </Button>
-      </div>
+      <PageHeader
+        title="Members"
+        subtitle={members ? `${members.length} members` : "Loading..."}
+        actions={
+          <>
+            {/* Buttons only for now. They do nothing yet. */}
+            <Button variant="secondary" icon={<UploadSimple size={18} />}>
+              Import
+            </Button>
+            <Button variant="secondary" icon={<DownloadSimple size={18} />}>
+              Export
+            </Button>
+            <Button variant="primary" onClick={() => router.push("/app/members/new")}>
+              Add member
+            </Button>
+          </>
+        }
+      />
 
       <div className="mt-6 w-full max-w-md [&>*]:w-full">
         <Input
