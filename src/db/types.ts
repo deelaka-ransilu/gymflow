@@ -32,3 +32,17 @@ export type Payment = {
 export type Visit = { id?: number; memberId: string; at: string; override?: boolean };
 
 export type Setting = { key: string; value: number };
+
+/** One line in the Backup history: a file that was exported, or a backup file that was imported. */
+export type BackupLog = {
+  id?: number;
+  at: string; // local date-time, like nowLocal()
+  kind: "export" | "import";
+  fileName: string;
+  /** How many records the file held. */
+  members: number;
+  payments: number;
+  visits: number;
+  /** File size in bytes. Not indexed, so no schema change was needed. Older rows have none. */
+  bytes?: number;
+};
