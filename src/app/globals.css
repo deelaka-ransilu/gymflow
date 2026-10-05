@@ -2,18 +2,30 @@
 @source "../../node_modules/@cloudflare/kumo/dist/**/*.{js,jsx,ts,tsx}";
 @import "@cloudflare/kumo/styles/tailwind";
 
-:root {
-  --background: #121212;
-  --foreground: #f5f5f5;
-}
-
 @theme inline {
   --color-accent: #ff6a00;
   --font-heading: var(--font-barlow);
 }
 
+html[data-mode="dark"] {
+  --color-kumo-canvas: #121212;
+  --color-kumo-base: #1c1c1c;
+  --color-kumo-elevated: #242424;
+  --color-kumo-recessed: #181818;
+  --color-kumo-tint: #242424;
+  --color-kumo-control: #242424;
+  --color-kumo-line: #2e2e2e;
+  --color-kumo-hairline: #2e2e2e;
+  --color-kumo-brand: #ff6a00;
+  --color-kumo-brand-hover: #ff8533;
+  --color-kumo-focus: #ff6a00;
+  --text-color-kumo-default: #f5f5f5;
+  --text-color-kumo-subtle: #a3a3a3;
+  --text-color-kumo-brand: #ff6a00;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: #121212;
+  color: #f5f5f5;
   font-family: var(--font-poppins), system-ui, sans-serif;
 }
