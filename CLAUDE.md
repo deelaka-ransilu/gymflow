@@ -203,14 +203,14 @@ POS or shop, CRM or leads, classes and booking, workout plans, body progress, tr
 6. Expiring page.
 7. Home dashboard (money visible to the owner only).
 8. Backup page: export, import, last-export warning, reset demo data.
-9. Polish: empty states, toasts, tablet and phone layout, README update, npm audit review.
+9. Polish: empty states, toasts, tablet and phone layout, README update.
 
 ## Gotchas
 
 - Running several commands on separate PowerShell lines does not stop when one fails. Use `&&` to chain them.
 - GitHub Pages serves the site under `/gymflow/`. If CSS or JS fails to load after a deploy, check `basePath` first.
 - Dexie cannot run during the build. A crash like "indexedDB is not defined" means a Dexie call is running at module level or during server rendering; move it into a hook inside a `"use client"` component.
-- npm reports 5 high-severity audit warnings. Do not run `npm audit fix --force`; it can break the project. Review them before any real launch.
+- `npm audit --omit=dev` found 0 vulnerabilities (checked 2026-10-05); the 5 high-severity warnings from plain `npm audit` are dev-tool only. Never run `npm audit fix --force`; it can break the project. Re-run `npm audit --omit=dev` before any real launch.
 - The VS Code warning "Value 'github-pages' is not valid" in `deploy.yml` is a false positive and can be ignored. Git's "LF will be replaced by CRLF" warnings are harmless on Windows.
 - The repo is public. Never commit real member data, Excel files or secrets.
 
