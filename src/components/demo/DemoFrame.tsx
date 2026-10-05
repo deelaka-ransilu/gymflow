@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowsIn, ArrowsOut } from "@phosphor-icons/react";
+import { ArrowsIn, ArrowsOut, X } from "@phosphor-icons/react";
 import { Button } from "@cloudflare/kumo";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 
@@ -20,7 +20,9 @@ const FOCUS =
 /**
  * Everything that exists only because this is a demo: the animated background, the Mac window,
  * the "Demo mode" strip and the buttons under the window. Full screen drops the background and
- * the window but keeps the strip. The children stay mounted when switching, so nothing resets.
+ * the window. The strip can be closed with its X (it comes back on refresh). While the strip is
+ * closed in full screen, a small floating button in the top right corner is the way out, and Esc
+ * always works. The children stay mounted when switching, so nothing resets.
  * For the real install, replace this component with a plain wrapper.
  */
 export function DemoFrame({
@@ -30,6 +32,8 @@ export function DemoFrame({
   onReset,
   children,
 }: DemoFrameProps) {
+  const [barOpen, setBarOpen] = useState(true);
+
   // Escape leaves full screen.
   useEffect(() => {
     if (!fullScreen) return;
@@ -76,24 +80,51 @@ export function DemoFrame({
           </div>
         )}
 
-        {/* Demo strip. In full screen the Exit button sits in its top right corner. */}
-        <div className="relative flex shrink-0 flex-wrap items-center justify-center gap-3 border-b border-accent/20 bg-accent/10 px-4 py-2 text-sm font-medium text-accent print:hidden">
-          <span>Demo mode. Data stays in this browser.</span>
-          <Button variant="ghost" size="xs" onClick={onReset}>
-            Reset demo data
-          </Button>
-          {fullScreen && (
+        {/* Demo strip. Exit full screen on the left, close (X) on the right. */}
+        {barOpen && (
+          <div className="relative flex shrink-0 flex-wrap items-center justify-center gap-x-3 gap-y-1 border-b border-accent/20 bg-accent/10 px-12 py-2 text-sm font-medium text-accent lg:px-44 print:hidden">
+            {fullScreen && (
+              <button
+                type="button"
+                onClick={onToggleFullScreen}
+                aria-label="Exit full screen"
+                title="Exit full screen (Esc)"
+                className={`absolute left-3 top-1/2 flex -translate-y-1/2 items-center gap-1.5 rounded-md border border-accent/40 px-2 py-1 text-xs font-medium text-accent hover:bg-accent/15 ${FOCUS}`}
+              >
+                <ArrowsIn size={14} />
+                <span className="hidden lg:inline">Exit full screen</span>
+              </button>
+            )}
+
+            <span>Demo mode. Data stays in this browser.</span>
+            <Button variant="ghost" size="xs" onClick={onReset}>
+              Reset demo data
+            </Button>
+
             <button
               type="button"
-              onClick={onToggleFullScreen}
-              title="Exit full screen (Esc)"
-              className={`flex items-center gap-1.5 rounded-md border border-accent/40 px-2.5 py-1 text-xs font-medium text-accent hover:bg-accent/15 lg:absolute lg:right-3 lg:top-1/2 lg:-translate-y-1/2 ${FOCUS}`}
+              onClick={() => setBarOpen(false)}
+              aria-label="Close demo bar"
+              title="Close"
+              className={`absolute right-3 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-md text-accent hover:bg-accent/15 ${FOCUS}`}
             >
-              <ArrowsIn size={14} />
-              Exit full screen
+              <X size={16} />
             </button>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* The way out of full screen while the demo strip is closed */}
+        {fullScreen && !barOpen && (
+          <button
+            type="button"
+            onClick={onToggleFullScreen}
+            aria-label="Exit full screen"
+            title="Exit full screen (Esc)"
+            className={`fixed right-3 top-3 z-50 grid h-9 w-9 place-items-center rounded-full border border-accent/40 bg-[#121212] text-accent shadow-lg shadow-black/50 hover:bg-accent/15 print:hidden ${FOCUS}`}
+          >
+            <ArrowsIn size={18} />
+          </button>
+        )}
 
         {/* The app (or the loading text, or the sign-in screen) */}
         <div className="flex min-h-0 flex-1 flex-col lg:overflow-y-auto print:overflow-visible!">

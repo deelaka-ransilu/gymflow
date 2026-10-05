@@ -82,6 +82,19 @@ function mulberry32(seed: number): () => number {
   };
 }
 
+/**
+ * A UUID-shaped id for demo member number i. It uses its own generator, so it does not touch
+ * the main random sequence (the visits and payments stay exactly as they were), and the same
+ * member always gets the same id. Real members get crypto.randomUUID() in members.ts.
+ */
+function demoId(i: number): string {
+  const r = mulberry32(SEED + i + 1);
+  const hex = (n: number) =>
+    Array.from({ length: n }, () => Math.floor(r() * 16).toString(16)).join("");
+  const variant = (8 + Math.floor(r() * 4)).toString(16);
+  return `${hex(8)}-${hex(4)}-4${hex(3)}-${variant}${hex(3)}-${hex(12)}`;
+}
+
 const pad = (n: number) => String(n).padStart(2, "0");
 
 /** "YYYY-MM-DDTHH:mm:ss", the same shape nowLocal() produces. */
@@ -117,7 +130,7 @@ export function buildDemo(nowAt: string): DemoData {
       starts.unshift(addMonths(currentStart, -k * plan.months));
     }
 
-    const id = `m-${i + 1}`;
+    const id = demoId(i);
     members.push({
       id,
       number: `GF-${String(i + 1).padStart(4, "0")}`,
