@@ -6,6 +6,7 @@ import { Button } from "@cloudflare/kumo";
 import { RoleProvider, useRole } from "@/lib/role";
 import { ensureSeeded, resetDemo } from "@/db/seed";
 import { Login } from "@/components/Login";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 
 const NAV = [
   { href: "/app", label: "Home", ownerOnly: false },
@@ -30,8 +31,10 @@ function Shell({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] lg:flex lg:items-center lg:justify-center lg:p-8 print:block! print:bg-transparent! print:p-0!">
-      <div className="w-full bg-[#121212] lg:flex lg:h-[min(840px,calc(100vh-4rem))] lg:max-w-[1200px] lg:flex-col lg:overflow-hidden lg:rounded-2xl lg:border lg:border-kumo-line lg:shadow-2xl lg:shadow-black/60 print:block! print:h-auto! print:max-w-none! print:overflow-visible! print:border-0! print:shadow-none!">
+    <div className="min-h-screen lg:flex lg:flex-col lg:items-center lg:justify-center lg:p-8 print:block! print:p-0!">
+      <AnimatedBackground />
+
+      <div className="relative z-10 w-full bg-[#121212] lg:flex lg:h-[min(820px,calc(100vh-9rem))] lg:max-w-[1200px] lg:flex-col lg:overflow-hidden lg:rounded-2xl lg:border lg:border-kumo-line lg:shadow-2xl lg:shadow-black/60 print:block! print:h-auto! print:max-w-none! print:overflow-visible! print:border-0! print:shadow-none!">
         {/* Mac-style title bar (laptops and desktops only) */}
         <div className="hidden shrink-0 items-center gap-2 border-b border-kumo-line bg-kumo-base px-4 py-3 lg:flex print:hidden">
           <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
@@ -95,6 +98,16 @@ function Shell({ children }: { children: React.ReactNode }) {
             </>
           )}
         </div>
+      </div>
+
+      {/* Buttons under the window */}
+      <div className="relative z-10 flex w-full flex-wrap items-center justify-center gap-3 px-4 py-5 lg:max-w-[1200px] print:hidden">
+        <Link href="/">
+          <Button variant="secondary" size="lg">← Back to website</Button>
+        </Link>
+        <Link href="/#contact">
+          <Button variant="primary" size="lg">Get this for your gym</Button>
+        </Link>
       </div>
     </div>
   );

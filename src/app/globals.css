@@ -30,6 +30,7 @@ body {
   font-family: var(--font-poppins), system-ui, sans-serif;
 }
 
+/* ---- Printing (receipts and member cards) ---- */
 @page {
   size: A4;
   margin: 15mm;

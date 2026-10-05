@@ -81,7 +81,7 @@ export default function Landing() {
           ))}
         </section>
 
-        <section className="mb-20 rounded-2xl border border-kumo-line bg-kumo-base p-8 text-center">
+        <section id="contact" className="mb-20 scroll-mt-6 rounded-2xl border border-kumo-line bg-kumo-base p-8 text-center">
           <h2 className="font-heading text-4xl font-semibold">Want this for your gym?</h2>
           <p className="mx-auto mt-2 max-w-lg text-kumo-subtle">
             Try the demo with sample members, then message us and we will set it up for your gym.
