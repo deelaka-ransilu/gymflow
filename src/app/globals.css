@@ -24,6 +24,16 @@ html[data-mode="dark"] {
   --text-color-kumo-brand: #ff6a00;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 body {
   background: #121212;
   color: #f5f5f5;
