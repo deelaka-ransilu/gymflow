@@ -63,7 +63,11 @@ async function importBackup(file: File) {
 
 export default function BackupPage() {
   const { role } = useRole();
-  const lastExport = useLiveQuery(() => db.settings.get("lastExport"), []);
+  // undefined = still loading, null = never exported
+  const lastExport = useLiveQuery(
+    async () => (await db.settings.get("lastExport")) ?? null,
+    []
+  );
   const fileRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -78,8 +82,11 @@ export default function BackupPage() {
   }
 
   const daysSince =
-    lastExport === undefined ? undefined : Math.floor((Date.now() - lastExport.value) / 86400000);
-  const stale = lastExport === null || (daysSince !== undefined && daysSince >= WARN_AFTER_DAYS);
+    lastExport === undefined || lastExport === null
+      ? undefined
+      : Math.floor((Date.now() - lastExport.value) / 86400000);
+  const neverExported = lastExport === null;
+  const stale = neverExported || (daysSince !== undefined && daysSince >= WARN_AFTER_DAYS);
 
   async function onExport() {
     setError("");
@@ -119,7 +126,7 @@ export default function BackupPage() {
 
       {stale && (
         <div className="mt-6 rounded-xl border border-yellow-400/40 bg-yellow-400/10 p-4 text-sm text-yellow-400">
-          {lastExport === null || lastExport === undefined
+          {neverExported
             ? "You have never exported a backup. Please export one now."
             : `Your last backup was ${daysSince} days ago. Please export a new one.`}
         </div>
@@ -130,7 +137,7 @@ export default function BackupPage() {
           <div className="font-medium">Export backup</div>
           <p className="mt-1 text-sm text-neutral-400">
             Downloads all members, payments and visits as one file.
-            {lastExport && daysSince !== undefined && (
+            {daysSince !== undefined && (
               <> Last export: {daysSince === 0 ? "today" : `${daysSince} days ago`}.</>
             )}
           </p>
