@@ -55,10 +55,11 @@ export default function MembersPage() {
         </Button>
       </div>
 
-      <div className="mt-6 max-w-md">
+      <div className="mt-6 w-full max-w-md [&>*]:w-full">
         <Input
           aria-label="Search members"
           placeholder="Search by name, phone, member number or NIC"
+          className="w-full"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
