@@ -1,31 +1,13 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { Button } from "@cloudflare/kumo";
-import { StatusBadge } from "@/components/StatusBadge";
-import type { Status } from "@/lib/rules";
+import { AppPreview } from "@/components/AppPreview";
 
 // TODO: put the real WhatsApp number here (country code, no + or spaces), e.g. "94771234567"
 const WHATSAPP_NUMBER = "94XXXXXXXXX";
 const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
   "Hi, I saw the GymFlow demo and I would like to know more."
 )}`;
-
-const BANNER: Record<Status, string> = {
-  active: "border-green-500/40 bg-green-500/10",
-  expiring: "border-yellow-400/40 bg-yellow-400/10",
-  expired: "border-red-500/40 bg-red-500/10",
-};
-const HEADLINE: Record<Status, string> = {
-  active: "text-green-500",
-  expiring: "text-yellow-400",
-  expired: "text-red-500",
-};
-
-const MOCKS: { status: Status; headline: string; name: string; meta: string }[] = [
-  { status: "active", headline: "Welcome back, Nimal!", name: "Nimal Perera", meta: "GF-0001 · 1 month" },
-  { status: "expiring", headline: "Expires in 3 days", name: "Dilani Silva", meta: "GF-0003 · 1 month" },
-  { status: "expired", headline: "Membership expired", name: "Kavindi Madushani", meta: "GF-0016 · 1 month" },
-];
 
 const STEPS = [
   { title: "Member shows their card", text: "Scan the QR card, or type a name, phone number or member number." },
@@ -39,42 +21,10 @@ const FEATURES = [
   { title: "Never miss a renewal", text: "A daily list shows who is expiring, so you can call them in time." },
 ];
 
-function MockCard({ m }: { m: (typeof MOCKS)[number] }) {
-  return (
-    <div className={`rounded-2xl border p-4 ${BANNER[m.status]}`}>
-      <p className={`font-heading text-2xl font-semibold ${HEADLINE[m.status]}`}>{m.headline}</p>
-      <div className="mt-3 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-kumo-tint text-sm font-semibold">
-          {m.name
-            .split(" ")
-            .map((p) => p[0])
-            .join("")
-            .slice(0, 2)}
-        </div>
-        <div className="min-w-0">
-          <p className="font-semibold">{m.name}</p>
-          <p className="text-xs text-kumo-subtle">{m.meta}</p>
-        </div>
-        <div className="ml-auto">
-          <StatusBadge status={m.status} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function Landing() {
   const router = useRouter();
-  const goDemo = () => router.push("/app/check-in");
+  const goDemo = () => router.push("/app");
   const goHow = () => document.getElementById("how")?.scrollIntoView({ behavior: "smooth" });
-
-  const contactButton = (size: "base" | "lg") => (
-    <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer">
-      <Button variant="outline" size={size}>
-        Talk to us on WhatsApp
-      </Button>
-    </a>
-  );
 
   return (
     <div className="min-h-screen">
@@ -88,29 +38,25 @@ export default function Landing() {
       </header>
 
       <main className="mx-auto max-w-5xl px-6">
-        <section className="grid items-center gap-12 py-16 sm:py-24 lg:grid-cols-2">
-          <div>
-            <h1 className="font-heading text-6xl font-semibold leading-none sm:text-7xl">
-              Run your gym from <span className="text-accent">one simple screen.</span>
-            </h1>
-            <p className="mt-6 max-w-xl text-lg text-kumo-subtle">
-              Know in one second who can come in, who owes money, and who needs to renew.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Button variant="primary" size="lg" onClick={goDemo}>
-                Try the demo
-              </Button>
-              <Button variant="secondary" size="lg" onClick={goHow}>
-                See how it works
-              </Button>
-            </div>
+        <section className="mx-auto max-w-3xl pb-14 pt-12 text-center sm:pt-20">
+          <h1 className="font-heading text-6xl font-semibold leading-none sm:text-8xl">
+            Run your gym from <span className="text-accent">one simple screen.</span>
+          </h1>
+          <p className="mx-auto mt-6 max-w-xl text-lg text-kumo-subtle">
+            Know in one second who can come in, who owes money, and who needs to renew.
+          </p>
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <Button variant="primary" size="lg" onClick={goDemo}>
+              Try the demo
+            </Button>
+            <Button variant="secondary" size="lg" onClick={goHow}>
+              See how it works
+            </Button>
           </div>
+        </section>
 
-          <div className="space-y-3" aria-hidden="true">
-            {MOCKS.map((m) => (
-              <MockCard key={m.status} m={m} />
-            ))}
-          </div>
+        <section className="pb-24">
+          <AppPreview />
         </section>
 
         <section id="how" className="scroll-mt-6 pb-16">
@@ -144,7 +90,11 @@ export default function Landing() {
             <Button variant="primary" size="lg" onClick={goDemo}>
               Try the demo
             </Button>
-            {contactButton("lg")}
+            <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" size="lg">
+                Talk to us on WhatsApp
+              </Button>
+            </a>
           </div>
         </section>
       </main>

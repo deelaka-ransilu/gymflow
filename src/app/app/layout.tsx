@@ -36,7 +36,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       </div>
 
       <header className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-4">
-        <Link href="/" className="font-heading text-2xl font-semibold">
+        <Link href="/" target="_top" className="font-heading text-2xl font-semibold">
           Gym<span className="text-accent">Flow</span>
         </Link>
         <div className="flex items-center gap-2">
