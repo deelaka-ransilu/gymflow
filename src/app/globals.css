@@ -29,3 +29,30 @@ body {
   color: #f5f5f5;
   font-family: var(--font-poppins), system-ui, sans-serif;
 }
+
+@page {
+  size: A4;
+  margin: 15mm;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  body[data-print="receipt"] .receipt-sheet,
+  body[data-print="receipt"] .receipt-sheet *,
+  body[data-print="card"] .card-sheet,
+  body[data-print="card"] .card-sheet * {
+    visibility: visible;
+  }
+  body[data-print="receipt"] .card-sheet,
+  body[data-print="card"] .receipt-sheet {
+    display: none;
+  }
+  .receipt-sheet,
+  .card-sheet {
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+}

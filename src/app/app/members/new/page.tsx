@@ -59,7 +59,7 @@ export default function NewMemberPage() {
 
   const selectClass =
     "w-full rounded-lg border border-[#2E2E2E] bg-[#1C1C1C] px-3 py-2 text-sm text-[#F5F5F5] outline-none focus:border-[#FF6A00]";
-  const checkClass = "flex items-center gap-2 text-sm text-neutral-200";
+    const checkClass = "flex items-center gap-2 text-sm text-neutral-200 [&>input]:accent-[#FF6A00]";
 
   return (
     <div className="max-w-xl">
@@ -115,7 +115,7 @@ export default function NewMemberPage() {
         </label>
 
         <div>
-          <label className="mb-1 block text-sm text-neutral-300" htmlFor="plan">
+          <label className="mb-1 block text-sm font-medium text-[#F5F5F5]" htmlFor="plan">
             Plan
           </label>
           <select
